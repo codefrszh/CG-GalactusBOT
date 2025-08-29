@@ -1,4 +1,5 @@
 const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder } = require("discord.js");
+const { sendLog } = require("../utils/logger");
 
 module.exports = {
   data: new SlashCommandBuilder()

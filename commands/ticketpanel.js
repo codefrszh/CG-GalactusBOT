@@ -1,6 +1,6 @@
 const { ActionRowBuilder, ButtonBuilder, ButtonStyle, ChannelType } = require("discord.js");
 const config = require("../config.json");
-const { sendLog } = require("./logger");
+const { sendLog } = require("../utils/logger");
 
 const createTicket = async (interaction) => {
   const category = interaction.guild.channels.cache.get(config.ticketCategoryId);
