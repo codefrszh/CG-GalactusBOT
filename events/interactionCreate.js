@@ -1,3 +1,4 @@
+// src/events/interactionCreate.js
 const { createTicket, closeTicket } = require("../utils/ticketHandler");
 const config = require("../config.json");
 const { sendLog } = require("../utils/logger");
@@ -5,73 +6,145 @@ const { sendLog } = require("../utils/logger");
 module.exports = {
   name: "interactionCreate",
   async execute(interaction) {
+    // Función segura para responder a interacciones
     const safeReply = async (content, ephemeral = true) => {
       if (interaction.replied || interaction.deferred) 
-        await interaction.followUp({ content, ephemeral });
+        await interaction.followUp({ content, ephemeral }).catch(console.error);
       else 
-        await interaction.reply({ content, ephemeral });
+        await interaction.reply({ content, ephemeral }).catch(console.error);
     };
 
-    // Comandos slash
+    // -----------------------------
+    // Comandos Slash
+    // -----------------------------
     if (interaction.isCommand()) {
       const command = interaction.client.commands.get(interaction.commandName);
       if (!command) return;
-      try { 
-        await command.execute(interaction); 
-        await sendLog("Comando ejecutado", `Usuario <@${interaction.user.id}> ejecutó /${interaction.commandName}`, "Blue");
-      } catch (err) { 
-        console.error(err); 
-        await safeReply("❌ Error ejecutando comando."); 
-        await sendLog("Error comando", `Error ejecutando /${interaction.commandName}:\n${err}`, "Red");
+
+      try {
+        await command.execute(interaction);
+        await sendLog(
+          "Comando ejecutado",
+          `Usuario <@${interaction.user.id}> ejecutó /${interaction.commandName}`,
+          "Blue"
+        );
+      } catch (err) {
+        console.error(err);
+        await safeReply("❌ Error ejecutando comando.");
+        await sendLog(
+          "Error comando",
+          `Error ejecutando /${interaction.commandName}:\n${err}`,
+          "Red"
+        );
       }
     }
 
+    // -----------------------------
     // Botones
+    // -----------------------------
     if (interaction.isButton()) {
-      if (interaction.customId === "verify_button") {
+      const id = interaction.customId;
+
+      // ===== Verificación =====
+      if (id === "verify_button") {
         const role = interaction.guild.roles.cache.get(config.verifyRoleId);
-        if (!role) { await safeReply("❌ No se encontró el rol."); return sendLog("Error verificación", `Rol no encontrado para <@${interaction.user.id}>`, "Red"); }
+        if (!role) {
+          await safeReply("❌ No se encontró el rol de verificación.");
+          return sendLog("Error verificación", `Rol no encontrado para <@${interaction.user.id}>`, "Red");
+        }
 
         try {
-          if (interaction.member.roles.cache.has(role.id)) { await safeReply("⚠️ Ya tienes el rol."); return; }
+          if (interaction.member.roles.cache.has(role.id)) {
+            await safeReply("⚠️ Ya tienes el rol.");
+            return sendLog("Verificación existente", `Usuario <@${interaction.user.id}> ya tenía el rol ${role.name}`, "Yellow");
+          }
           await interaction.member.roles.add(role);
           await safeReply(`✅ Rol **${role.name}** asignado!`);
-        } catch { await safeReply("❌ No pude asignarte el rol."); }
+          await sendLog("Rol asignado", `Usuario <@${interaction.user.id}> recibió rol ${role.name}`, "Green");
+        } catch (err) {
+          console.error(err);
+          await safeReply("❌ No pude asignarte el rol.");
+          await sendLog("Error asignando rol", `Error asignando rol ${role.name} a <@${interaction.user.id}>:\n${err}`, "Red");
+        }
       }
 
-      if (interaction.customId === "create_ticket") { try { await createTicket(interaction); } catch { await safeReply("❌ Error creando ticket."); } }
-      if (interaction.customId === "close_ticket") { try { await closeTicket(interaction); } catch { await safeReply("❌ Error cerrando ticket."); } }
+      // ===== Crear Ticket =====
+      if (id === "create_ticket") {
+        try {
+          await createTicket(interaction);
+          await sendLog("Ticket creado", `Usuario <@${interaction.user.id}> creó un ticket`, "Blue");
+        } catch (err) {
+          console.error(err);
+          await safeReply("❌ Error creando ticket.");
+          await sendLog("Error ticket", `Error creando ticket para <@${interaction.user.id}>:\n${err}`, "Red");
+        }
+      }
 
-      if (interaction.customId.startsWith("role_")) {
-        const roleId = interaction.customId.split("_")[1];
+      // ===== Cerrar Ticket =====
+      if (id === "close_ticket") {
+        try {
+          await closeTicket(interaction);
+          await sendLog("Ticket cerrado", `Usuario <@${interaction.user.id}> cerró un ticket`, "Blue");
+        } catch (err) {
+          console.error(err);
+          await safeReply("❌ Error cerrando ticket.");
+          await sendLog("Error cerrar ticket", `Error cerrando ticket por <@${interaction.user.id}>:\n${err}`, "Red");
+        }
+      }
+
+      // ===== Self Roles =====
+      if (id.startsWith("role_")) {
+        const roleId = id.split("_")[1];
         const role = interaction.guild.roles.cache.get(roleId);
-        if (!role) { await safeReply("❌ Rol no existe."); return; }
+        if (!role) {
+          await safeReply("❌ Rol no existe.");
+          return sendLog("Error self role", `Rol no encontrado para <@${interaction.user.id}>`, "Red");
+        }
+
         try {
           if (interaction.member.roles.cache.has(role.id)) {
             await interaction.member.roles.remove(role);
             await safeReply(`🗑️ Rol **${role.name}** quitado.`);
+            await sendLog("Rol quitado", `Usuario <@${interaction.user.id}> se quitó el rol ${role.name}`, "Yellow");
           } else {
             await interaction.member.roles.add(role);
             await safeReply(`✅ Rol **${role.name}** asignado.`);
+            await sendLog("Rol asignado", `Usuario <@${interaction.user.id}> recibió rol ${role.name}`, "Green");
           }
-        } catch { await safeReply("❌ Error asignando/quitar rol."); }
+        } catch (err) {
+          console.error(err);
+          await safeReply("❌ Error asignando/quitar rol.");
+          await sendLog("Error self role", `Error asignando/quitar rol ${role.name} a <@${interaction.user.id}>:\n${err}`, "Red");
+        }
       }
     }
 
+    // -----------------------------
     // Menú desplegable Self Roles
+    // -----------------------------
     if (interaction.isStringSelectMenu() && interaction.customId === "self_roles") {
       const roleId = interaction.values[0];
       const role = interaction.guild.roles.cache.get(roleId);
-      if (!role) { await safeReply("❌ Rol no existe."); return; }
+      if (!role) {
+        await safeReply("❌ Rol no existe.");
+        return sendLog("Error select role", `Rol no encontrado en select menu para <@${interaction.user.id}>`, "Red");
+      }
+
       try {
         if (interaction.member.roles.cache.has(role.id)) {
           await interaction.member.roles.remove(role);
           await safeReply(`🗑️ Rol **${role.name}** quitado.`);
+          await sendLog("Rol quitado select", `Usuario <@${interaction.user.id}> se quitó el rol ${role.name}`, "Yellow");
         } else {
           await interaction.member.roles.add(role);
           await safeReply(`✅ Rol **${role.name}** asignado.`);
+          await sendLog("Rol asignado select", `Usuario <@${interaction.user.id}> recibió rol ${role.name}`, "Green");
         }
-      } catch { await safeReply("❌ Error asignando/quitar rol."); }
+      } catch (err) {
+        console.error(err);
+        await safeReply("❌ Error asignando/quitar rol.");
+        await sendLog("Error select role", `Error asignando/quitar rol ${role.name} a <@${interaction.user.id}>:\n${err}`, "Red");
+      }
     }
-  }
+  },
 };
