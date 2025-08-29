@@ -30,10 +30,15 @@ module.exports = {
     const selectMenu = new StringSelectMenuBuilder()
       .setCustomId("self_roles")
       .setPlaceholder("Selecciona un rol...")
-      .addOptions(roles.map(r => ({ label: r.label, value: r.id })));
+       .addOptions(
+        roles.map(r => ({
+          label: r.label,
+          value: r.id,
+        }))
+      );
 
     const row = new ActionRowBuilder().addComponents(selectMenu);
 
     await interaction.reply({ embeds: [embed], components: [row] });
-  }
+  },
 };

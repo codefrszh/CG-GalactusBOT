@@ -15,8 +15,11 @@ const sendLog = async (title, description, color = "Blue") => {
     .setColor(color)
     .setTimestamp();
 
-  try { await webhook.send({ embeds: [embed] }); } 
-  catch (err) { console.error("❌ Error enviando log:", err); }
+  try {
+    await webhook.send({ embeds: [embed] });
+  } catch (err) {
+    console.error("❌ Error enviando log al webhook:", err);
+  }
 };
 
 module.exports = { sendLog };
