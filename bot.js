@@ -5,6 +5,8 @@ const { Client, GatewayIntentBits, Partials, Collection } = require("discord.js"
 const fs = require("fs");
 const path = require("path");
 const config = require("./config.json");
+const { sendLog } = require("./utils/logger");
+
 
 // Servidor web mínimo para Render
 const app = express();
@@ -49,10 +51,24 @@ for (const file of eventFiles) {
   else client.on(event.name, (...args) => event.execute(...args, client));
 }
 
-// Login
+// Al iniciar sesión
 client.login(process.env.TOKEN)
-  .then(() => console.log("✅ Bot iniciado correctamente"))
+  .then(() => {
+    console.log("✅ Bot iniciado correctamente");
+    sendLog("Bot Iniciado", `Bot activo como ${client.user.tag}`, "Green");
+  })
   .catch(err => {
-    console.error("❌ Error al iniciar sesión, revisa tu TOKEN en .env");
-    console.error(err);
+    console.error("❌ Error al iniciar sesión", err);
+    sendLog("Error Login", `Error iniciando bot: ${err}`, "Red");
   });
+
+// Capturar errores globales
+process.on("unhandledRejection", async (reason, promise) => {
+  console.error("❌ Rechazo no manejado:", reason);
+  await sendLog("Error no manejado", `${reason}`, "Red");
+});
+
+process.on("uncaughtException", async (err) => {
+  console.error("❌ Excepción no capturada:", err);
+  await sendLog("Excepción no capturada", `${err}`, "Red");
+});
