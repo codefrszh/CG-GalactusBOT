@@ -1,42 +1,78 @@
-const { Client, GatewayIntentBits, Collection } = require("discord.js");
-const fs = require("fs");
 require("dotenv").config();
+const fs = require("fs");
+const { Client, GatewayIntentBits, Partials, REST, Routes } = require("discord.js");
+const config = require("./config.json");
 
+// -----------------------------
+// Cliente de Discord
+// -----------------------------
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildMessages,
-    GatewayIntentBits.GuildMembers,
     GatewayIntentBits.MessageContent,
+    GatewayIntentBits.GuildMembers,
   ],
+  partials: [Partials.Message, Partials.Channel, Partials.Reaction],
 });
 
-// Colecciones para comandos
-client.commands = new Collection();
+// -----------------------------
+// Comandos
+// -----------------------------
+const commands = [];
+const commandFiles = fs.readdirSync("./commands").filter((f) => f.endsWith(".js"));
 
-// Cargar comandos
-const commandFiles = fs
-  .readdirSync("./commands")
-  .filter((file) => file.endsWith(".js"));
+client.commands = new Map();
 
 for (const file of commandFiles) {
   const command = require(`./commands/${file}`);
+  commands.push(command.data.toJSON());
   client.commands.set(command.data.name, command);
 }
 
-// Cargar eventos
-const eventFiles = fs
-  .readdirSync("./events")
-  .filter((file) => file.endsWith(".js"));
+// Registrar comandos en la guild
+const rest = new REST({ version: "10" }).setToken(process.env.TOKEN);
 
-for (const file of eventFiles) {
-  const event = require(`./events/${file}`);
-  if (event.once) {
-    client.once(event.name, (...args) => event.execute(...args));
-  } else {
-    client.on(event.name, (...args) => event.execute(...args));
+(async () => {
+  try {
+    console.log(`🔄 Registrando ${commands.length} comandos en la guild...`);
+    await rest.put(
+      Routes.applicationGuildCommands(process.env.CLIENT_ID, config.guildId),
+      { body: commands }
+    );
+    console.log("✅ Comandos registrados correctamente");
+  } catch (err) {
+    console.error("❌ Error registrando comandos:", err);
   }
-}
+})();
 
-// Iniciar sesión
-client.login(process.env.DISCORD_TOKEN);
+// -----------------------------
+// Eventos
+// -----------------------------
+client.once("clientReady", () => {
+  console.log(`✅ Bot iniciado como ${client.user.tag}`);
+});
+
+client.on("interactionCreate", async (interaction) => {
+  require("./events/interactionCreate").execute(interaction, client);
+});
+
+// -----------------------------
+// Comando prefix (!ping)
+// -----------------------------
+client.on("messageCreate", (message) => {
+  if (!message.content.startsWith(config.prefix) || message.author.bot) return;
+
+  const args = message.content.slice(config.prefix.length).trim().split(/ +/);
+  const command = args.shift().toLowerCase();
+
+  if (command === "ping") message.reply("🏓 Pong!");
+});
+
+// -----------------------------
+// Login
+// -----------------------------
+client.login(process.env.TOKEN).catch((err) => {
+  console.error("❌ Error al iniciar sesión, revisa tu TOKEN en .env");
+  console.error(err);
+});

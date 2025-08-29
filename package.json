@@ -1,19 +1,35 @@
 {
-  "dependencies": {
-    "discord.js": "^14.22.1",
-    "dotenv": "^17.2.1"
-  },
-  "name": "galactus",
+  "name": "galactus-bot",
   "version": "1.0.0",
+  "description": "Bot de Discord para verificación, tickets y roles self-assign",
   "main": "bot.js",
+  "type": "commonjs",
   "scripts": {
-    "start": "node bot.js"
+    "start": "node bot.js",
+    "dev": "nodemon bot.js"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/codefrszh/CG-GalactusBOT.git"
+  },
+  "keywords": [
+    "discord",
+    "bot",
+    "verification",
+    "roles",
+    "tickets"
+  ],
+  "author": "Victor Perez",
+  "license": "MIT",
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "dependencies": {
+    "discord.js": "^14.14.0",
+    "dotenv": "^17.2.1",
+    "sqlite3": "^5.1.6"
+  },
   "devDependencies": {
-    "nodemon": "^3.1.10"
-  },
-  "description": ""
+    "nodemon": "^3.0.2"
+  }
 }

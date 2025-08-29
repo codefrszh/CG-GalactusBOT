@@ -3,37 +3,21 @@ const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, Butt
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("ticketpanel")
-    .setDescription("Crea el panel de tickets en este canal."),
-  
+    .setDescription("📌 Publica un panel para crear tickets."),
+
   async execute(interaction) {
-    const channel = interaction.channel;
-
-    // Validar permisos del bot en el canal actual
-    if (!channel.permissionsFor(interaction.client.user).has("SendMessages")) {
-      return interaction.reply({ 
-        content: "❌ No tengo permisos para enviar mensajes en este canal.", 
-        ephemeral: true 
-      });
-    }
-
-    // Embed del panel de tickets
     const embed = new EmbedBuilder()
-      .setColor("Blue")
-      .setTitle("🎫 Soporte - Crear Ticket")
-      .setDescription("Si necesitas ayuda, presiona el botón de abajo para crear un ticket. Un miembro del staff te atenderá pronto.");
+      .setTitle("🎟️ Tickets")
+      .setDescription("Presiona el botón para crear un ticket.")
+      .setColor("Gold");
 
-    // Botón para abrir ticket
-    const button = new ActionRowBuilder().addComponents(
+    const row = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
         .setCustomId("create_ticket")
-        .setLabel("📩 Crear Ticket")
+        .setLabel("Crear Ticket")
         .setStyle(ButtonStyle.Primary)
     );
 
-    // Enviar embed en el canal donde se ejecutó el comando
-    await channel.send({ embeds: [embed], components: [button] });
-
-    // Responder al usuario
-    await interaction.reply({ content: "✅ Panel de tickets creado en este canal.", ephemeral: true });
+    await interaction.reply({ embeds: [embed], components: [row] });
   },
 };
