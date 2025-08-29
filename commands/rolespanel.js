@@ -4,6 +4,7 @@ module.exports = {
   data: new SlashCommandBuilder()
     .setName("rolespanel")
     .setDescription("📌 Muestra un panel de auto-asignación de roles."),
+
   async execute(interaction) {
     const roles = [
       { id: "1284015131847557130", label: "🚀 → Fortnite" },
@@ -14,7 +15,6 @@ module.exports = {
       { id: "1284015598627455008", label: "🥊 → Brawlhalla" },
       { id: "1284015732035944513", label: "⚾ → MLB" },
       { id: "1284015825245831229", label: "🏀 → NBA" },
-      { id: "1287122561150226503", label: "👹 → Devour" },
       { id: "1332919654850756638", label: "🦸 → Marvelsiano" },
       { id: "1286678228416860235", label: "👨‍🚀 → Among Us" },
       { id: "1284015881936175135", label: "🤠 → REDM " },
@@ -32,6 +32,7 @@ module.exports = {
       .addOptions(roles.map(r => ({ label: r.label, value: r.id })));
 
     const row = new ActionRowBuilder().addComponents(selectMenu);
+
     await interaction.reply({ embeds: [embed], components: [row] });
   }
 };

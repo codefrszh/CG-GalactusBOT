@@ -1,4 +1,3 @@
-// bot.js
 require("dotenv").config();
 const express = require("express");
 const { Client, GatewayIntentBits, Partials, Collection } = require("discord.js");
@@ -7,68 +6,50 @@ const path = require("path");
 const config = require("./config.json");
 const { sendLog } = require("./utils/logger");
 
-
-// Servidor web mínimo para Render
-const app = express();
-const PORT = process.env.PORT || 10000;
-
-app.get("/", (req, res) => res.send("Servidor web activo ✅"));
-app.listen(PORT, () => console.log(`Servidor web escuchando en el puerto ${PORT}`));
-
-// Cliente Discord
 const client = new Client({
-  intents: [
-    GatewayIntentBits.Guilds,
-    GatewayIntentBits.GuildMessages,
-    GatewayIntentBits.MessageContent,
-    GatewayIntentBits.GuildMembers
-  ],
+  intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent, GatewayIntentBits.GuildMembers],
   partials: [Partials.Message, Partials.Channel, Partials.Reaction]
 });
 
 client.commands = new Collection();
 
-// Registrar comandos
+// Cargar comandos
 const commandsPath = path.join(__dirname, "commands");
-const commandFiles = fs.readdirSync(commandsPath).filter(f => f.endsWith(".js"));
-
-for (const file of commandFiles) {
+fs.readdirSync(commandsPath).filter(f => f.endsWith(".js")).forEach(file => {
   const command = require(path.join(commandsPath, file));
-  if ("data" in command && "execute" in command) {
-    client.commands.set(command.data.name, command);
-  } else {
-    console.log(`[WARNING] Comando mal formado: ${file}`);
-  }
-}
+  client.commands.set(command.data.name, command);
+});
 
-// Registrar eventos
+// Cargar eventos
 const eventsPath = path.join(__dirname, "events");
-const eventFiles = fs.readdirSync(eventsPath).filter(f => f.endsWith(".js"));
-
-for (const file of eventFiles) {
+fs.readdirSync(eventsPath).filter(f => f.endsWith(".js")).forEach(file => {
   const event = require(path.join(eventsPath, file));
-  if (event.once) client.once(event.name, (...args) => event.execute(...args, client));
-  else client.on(event.name, (...args) => event.execute(...args, client));
-}
-
-// Al iniciar sesión
-client.login(process.env.TOKEN)
-  .then(() => {
-    console.log("✅ Bot iniciado correctamente");
-    sendLog("Bot Iniciado", `Bot activo como ${client.user.tag}`, "Green");
-  })
-  .catch(err => {
-    console.error("❌ Error al iniciar sesión", err);
-    sendLog("Error Login", `Error iniciando bot: ${err}`, "Red");
-  });
-
-// Capturar errores globales
-process.on("unhandledRejection", async (reason, promise) => {
-  console.error("❌ Rechazo no manejado:", reason);
-  await sendLog("Error no manejado", `${reason}`, "Red");
+  client.on(event.name, (...args) => event.execute(...args));
 });
 
-process.on("uncaughtException", async (err) => {
-  console.error("❌ Excepción no capturada:", err);
-  await sendLog("Excepción no capturada", `${err}`, "Red");
+// Eventos básicos
+client.on("ready", () => {
+  console.log(`✅ Bot iniciado como ${client.user.tag}`);
+  sendLog("Bot iniciado", `Bot iniciado como ${client.user.tag}`, "Green");
 });
+
+client.on("error", err => sendLog("Error client", err.message, "Red"));
+
+// Prefix comandos opcional
+client.on("messageCreate", msg => {
+  if (!msg.content.startsWith(config.prefix) || msg.author.bot) return;
+  const args = msg.content.slice(config.prefix.length).trim().split(/ +/);
+  const cmd = args.shift().toLowerCase();
+  if (cmd === "ping") msg.reply("🏓 Pong!");
+});
+
+// Login
+client.login(process.env.TOKEN).catch(err => console.error("❌ Token inválido:", err));
+
+// ===== Servidor web para keep-alive =====
+const app = express();
+const PORT = process.env.PORT || 10000;
+
+app.get("/", (req, res) => res.send("Bot activo!"));
+
+app.listen(PORT, () => console.log(`Servidor web escuchando en el puerto ${PORT}`));
