@@ -76,3 +76,17 @@ client.login(process.env.TOKEN).catch((err) => {
   console.error("❌ Error al iniciar sesión, revisa tu TOKEN en .env");
   console.error(err);
 });
+
+// Al final de bot.js, después de client.login(...)
+const express = require("express");
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+// Servidor HTTP mínimo para mantener Render feliz
+app.get("/", (req, res) => {
+  res.send("Bot activo en Render ✅");
+});
+
+app.listen(PORT, () => {
+  console.log(`Servidor web escuchando en el puerto ${PORT}`);
+});
