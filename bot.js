@@ -42,7 +42,17 @@ for (const file of commandFiles) {
 client.once("clientReady", () => {
   console.log(`✅ Bot iniciado como ${client.user.tag}`);
   sendLog("Bot Iniciado", `El bot se ha iniciado correctamente como **${client.user.tag}**`, "Green");
+
+  // =========================
+  // Actividad del bot
+  // =========================
+  client.user.setPresence({
+    activities: [{ name: "🌌 Una Galaxia", type: 3 }], // type 0 = "Playing"
+    status: "online" // online, idle, dnd, invisible
+  });
 });
+
+
 
 // -----------------------------
 // Evento interactionCreate
@@ -117,3 +127,5 @@ if (keepAliveUrl) {
 } else {
   console.warn("⚠️ process.env.URL no definido, auto-ping desactivado.");
 }
+
+
