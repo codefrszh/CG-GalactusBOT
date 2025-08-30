@@ -8,7 +8,6 @@ module.exports = {
 
   async execute(interaction) {
     const roles = [
-      { id: "", label: "Seleccionar" },
       { id: "1284015131847557130", label: "🚀 → Fortnite" },
       { id: "1284015284486930473", label: "🔫 → Warzone" },
       { id: "1332215765738455074", label: "🚛 → Trailero " },
