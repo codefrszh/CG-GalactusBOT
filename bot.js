@@ -99,16 +99,21 @@ app.listen(PORT, () => {
 // -----------------------------
 // Auto-ping para mantener vivo en Render
 // -----------------------------
-const fetch = require("node-fetch");
+const KEEP_ALIVE_INTERVAL = 5 * 60 * 1000; // cada 5 minutos
+const keepAliveUrl = process.env.URL; // URL pública de Render desde .env
 
-setInterval(async () => {
-  const url = process.env.RENDER_EXTERNAL_URL || `http://localhost:${PORT}`;
-  try {
-    await fetch(url);
-    console.log("🔄 Auto-ping enviado a Render");
-    sendLog("Aqui estoy", `Se envió auto-ping al servidor (${url})`, "Blue");
-  } catch (err) {
-    console.error("❌ Error en auto-ping:", err);
-    sendLog("KeepAlive Error", `${err.message}`, "Red");
-  }
-}, 1000 * 60 * 5); // cada 5 minutos
+if (keepAliveUrl) {
+  setInterval(async () => {
+    try {
+      // Node.js 18+ tiene fetch global; si no, instalar node-fetch
+      await fetch(keepAliveUrl, { method: "GET" });
+      console.log("🔄 Auto-ping enviado a Render");
+      sendLog("KeepAlive", `Auto-ping enviado al servidor (${keepAliveUrl})`, "Blue");
+    } catch (err) {
+      console.error("❌ Error en auto-ping:", err);
+      sendLog("KeepAlive Error", `${err}`, "Red");
+    }
+  }, KEEP_ALIVE_INTERVAL);
+} else {
+  console.warn("⚠️ process.env.URL no definido, auto-ping desactivado.");
+}
