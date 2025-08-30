@@ -11,7 +11,6 @@ module.exports = {
       { id: "", label: "Seleccionar" },
       { id: "1284015131847557130", label: "🚀 → Fortnite" },
       { id: "1284015284486930473", label: "🔫 → Warzone" },
-      { id: "1284016178036998287", label: "⛏️ → Minecraft" },
       { id: "1332215765738455074", label: "🚛 → Trailero " },
       { id: "1284015391580098570", label: "🏎️ → Assetto Corsa" },
       { id: "1284015598627455008", label: "🥊 → Brawlhalla" },
