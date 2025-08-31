@@ -47,7 +47,7 @@ client.once("clientReady", () => {
   // Actividad del bot
   // =========================
   client.user.setPresence({
-    activities: [{ name: "🌌 Una Galaxia", type: 3 }], // type 0 = "Playing"
+    activities: [{ name: "🌌 Una Galaxia", type: 2 }], // type 0 = "Playing"
     status: "online" // online, idle, dnd, invisible
   });
 });
