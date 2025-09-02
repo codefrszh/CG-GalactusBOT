@@ -3,7 +3,7 @@ require("dotenv").config();
 const fs = require("fs");
 const path = require("path");
 const express = require("express");
-const { Client, Collection, GatewayIntentBits, Partials, ActivityType } = require("discord.js");
+const { Client, Collection, GatewayIntentBits, Partials } = require("discord.js");
 const { sendLog } = require("./utils/logger");
 const config = require("./config.json");
 
@@ -37,29 +37,22 @@ for (const file of commandFiles) {
 }
 
 // -----------------------------
-// Evento ready (corregido)
+// Evento ready
 // -----------------------------
-client.once("ready", () => {
+client.once("clientReady", () => {
   console.log(`✅ Bot iniciado como ${client.user.tag}`);
   sendLog("Bot Iniciado", `El bot se ha iniciado correctamente como **${client.user.tag}**`, "Green");
-
-  // Buscar el servidor principal (guild) desde la lista de guilds del bot
-  const mainGuild = client.guilds.cache.get(process.env.GUILD_ID); // agrega tu GUILD_ID en .env
-
-  // Crear el texto de actividad dinámico
-  let actividadTexto = "🌌 En el espacio";
-  if (mainGuild) {
-    actividadTexto = `[${mainGuild.name}] 🌌 En el espacio`; // Clan tag con nombre del servidor
-  }
 
   // =========================
   // Actividad del bot
   // =========================
   client.user.setPresence({
-    activities: [{ name: actividadTexto, type: ActivityType.Playing }],
+    activities: [{ name: "🌌 Una Galaxia", type: 2 }], // type 0 = "Playing"
     status: "online" // online, idle, dnd, invisible
   });
 });
+
+
 
 // -----------------------------
 // Evento interactionCreate
@@ -122,6 +115,7 @@ const keepAliveUrl = process.env.URL; // URL pública de Render desde .env
 if (keepAliveUrl) {
   setInterval(async () => {
     try {
+      // Node.js 18+ tiene fetch global; si no, instalar node-fetch
       await fetch(keepAliveUrl, { method: "GET" });
       console.log("🔄 Auto-ping enviado a Render");
       sendLog("KeepAlive", `Auto-ping enviado al servidor (${keepAliveUrl})`, "Blue");
@@ -133,3 +127,5 @@ if (keepAliveUrl) {
 } else {
   console.warn("⚠️ process.env.URL no definido, auto-ping desactivado.");
 }
+
+
