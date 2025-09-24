@@ -10,9 +10,9 @@ module.exports = {
     const safeReply = async (content, ephemeral = true) => {
       try {
         if (interaction.replied || interaction.deferred) {
-          await interaction.followUp({ content, ephemeral });
+          await interaction.followUp({ content, ephemeral }).catch(() => {});
         } else {
-          await interaction.reply({ content, ephemeral });
+          await interaction.reply({ content, ephemeral }).catch(() => {});
         }
       } catch (err) {
         console.error("❌ Error enviando respuesta:", err);
@@ -23,6 +23,7 @@ module.exports = {
     // Comandos Slash
     // -----------------------------
     if (interaction.isCommand()) {
+      await interaction.deferReply({ ephemeral: true }).catch(() => {});
       const command = interaction.client.commands.get(interaction.commandName);
       if (!command) return;
 
@@ -48,6 +49,7 @@ module.exports = {
     // Botones
     // -----------------------------
     if (interaction.isButton()) {
+      await interaction.deferUpdate().catch(() => {});
       const id = interaction.customId;
 
       // ===== Verificación =====
@@ -58,7 +60,11 @@ module.exports = {
         try {
           if (interaction.member.roles.cache.has(role.id)) {
             await safeReply("⚠️ Ya tienes el rol.");
-            return sendLog("Verificación existente", `Usuario <@${interaction.user.id}> ya tenía el rol ${role.name}`, "Yellow");
+            return sendLog(
+              "Verificación existente",
+              `Usuario <@${interaction.user.id}> ya tenía el rol ${role.name}`,
+              "Yellow"
+            );
           }
           await interaction.member.roles.add(role);
           await safeReply(`✅ Rol **${role.name}** asignado!`);
@@ -66,7 +72,11 @@ module.exports = {
         } catch (err) {
           console.error(err);
           await safeReply("❌ No pude asignarte el rol.");
-          await sendLog("Error asignando rol", `Error asignando rol ${role.name} a <@${interaction.user.id}>:\n${err}`, "Red");
+          await sendLog(
+            "Error asignando rol",
+            `Error asignando rol ${role.name} a <@${interaction.user.id}>:\n${err}`,
+            "Red"
+          );
         }
       }
 
@@ -113,7 +123,11 @@ module.exports = {
         } catch (err) {
           console.error(err);
           await safeReply("❌ Error asignando/quitar rol.");
-          await sendLog("Error self role", `Error asignando/quitar rol ${role.name} a <@${interaction.user.id}>:\n${err}`, "Red");
+          await sendLog(
+            "Error self role",
+            `Error asignando/quitar rol ${role.name} a <@${interaction.user.id}>:\n${err}`,
+            "Red"
+          );
         }
       }
     }
@@ -122,6 +136,7 @@ module.exports = {
     // Menú desplegable Self Roles
     // -----------------------------
     if (interaction.isStringSelectMenu() && interaction.customId === "self_roles") {
+      await interaction.deferUpdate().catch(() => {});
       const roleId = interaction.values[0];
       const role = interaction.guild.roles.cache.get(roleId);
       if (!role) return await safeReply("❌ Rol no existe.");
@@ -130,16 +145,28 @@ module.exports = {
         if (interaction.member.roles.cache.has(role.id)) {
           await interaction.member.roles.remove(role);
           await safeReply(`🗑️ Rol **${role.name}** quitado.`);
-          await sendLog("Rol quitado select", `Usuario <@${interaction.user.id}> se quitó el rol ${role.name}`, "Yellow");
+          await sendLog(
+            "Rol quitado select",
+            `Usuario <@${interaction.user.id}> se quitó el rol ${role.name}`,
+            "Yellow"
+          );
         } else {
           await interaction.member.roles.add(role);
           await safeReply(`✅ Rol **${role.name}** asignado.`);
-          await sendLog("Rol asignado select", `Usuario <@${interaction.user.id}> recibió rol ${role.name}`, "Green");
+          await sendLog(
+            "Rol asignado select",
+            `Usuario <@${interaction.user.id}> recibió rol ${role.name}`,
+            "Green"
+          );
         }
       } catch (err) {
         console.error(err);
         await safeReply("❌ Error asignando/quitar rol.");
-        await sendLog("Error select role", `Error asignando/quitar rol ${role.name} a <@${interaction.user.id}>:\n${err}`, "Red");
+        await sendLog(
+          "Error select role",
+          `Error asignando/quitar rol ${role.name} a <@${interaction.user.id}>:\n${err}`,
+          "Red"
+        );
       }
     }
   },
