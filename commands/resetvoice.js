@@ -1,22 +1,22 @@
-// commands/resetvoice.js
+// src/commands/resetvoice.js
 const { SlashCommandBuilder } = require("discord.js");
-const fs = require("fs");
-const path = require("path");
-const dataFile = path.join(__dirname, "../voiceData.json");
-const { voiceActivity } = require("../events/voiceStateUpdate");
+const voiceTimes = require("../utils/voiceTimes");
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("resetvoice")
-    .setDescription("Reinicia el contador de minutos de voz"),
+    .setDescription("Reinicia el conteo de tiempo de voz semanal."),
+
+  defer: true,
+
   async execute(interaction) {
-    if (!interaction.member.permissions.has("Administrator")) {
-      return interaction.reply("⚠️ Solo administradores pueden usar este comando.");
+    try {
+      voiceTimes.clear();
+      await interaction.editReply("✅ Conteo de voz semanal reiniciado.");
+      return true;
+    } catch (err) {
+      console.error("❌ Error resetvoice:", err);
+      return false;
     }
-
-    voiceActivity.clear();
-    if (fs.existsSync(dataFile)) fs.unlinkSync(dataFile);
-
-    await interaction.reply("🗑️ Datos de voz reiniciados.");
-  }
+  },
 };
