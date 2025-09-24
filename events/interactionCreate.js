@@ -8,10 +8,15 @@ module.exports = {
   async execute(interaction) {
     // Función segura para responder a interacciones
     const safeReply = async (content, ephemeral = true) => {
-      if (interaction.replied || interaction.deferred) 
-        await interaction.followUp({ content, ephemeral }).catch(console.error);
-      else 
-        await interaction.reply({ content, ephemeral }).catch(console.error);
+      try {
+        if (interaction.replied || interaction.deferred) {
+          await interaction.followUp({ content, ephemeral });
+        } else {
+          await interaction.reply({ content, ephemeral });
+        }
+      } catch (err) {
+        console.error("❌ Error enviando respuesta:", err);
+      }
     };
 
     // -----------------------------
@@ -48,10 +53,7 @@ module.exports = {
       // ===== Verificación =====
       if (id === "verify_button") {
         const role = interaction.guild.roles.cache.get(config.verifyRoleId);
-        if (!role) {
-          await safeReply("❌ No se encontró el rol de verificación.");
-          return sendLog("Error verificación", `Rol no encontrado para <@${interaction.user.id}>`, "Red");
-        }
+        if (!role) return await safeReply("❌ No se encontró el rol de verificación.");
 
         try {
           if (interaction.member.roles.cache.has(role.id)) {
@@ -96,10 +98,7 @@ module.exports = {
       if (id.startsWith("role_")) {
         const roleId = id.split("_")[1];
         const role = interaction.guild.roles.cache.get(roleId);
-        if (!role) {
-          await safeReply("❌ Rol no existe.");
-          return sendLog("Error self role", `Rol no encontrado para <@${interaction.user.id}>`, "Red");
-        }
+        if (!role) return await safeReply("❌ Rol no existe.");
 
         try {
           if (interaction.member.roles.cache.has(role.id)) {
@@ -125,10 +124,7 @@ module.exports = {
     if (interaction.isStringSelectMenu() && interaction.customId === "self_roles") {
       const roleId = interaction.values[0];
       const role = interaction.guild.roles.cache.get(roleId);
-      if (!role) {
-        await safeReply("❌ Rol no existe.");
-        return sendLog("Error select role", `Rol no encontrado en select menu para <@${interaction.user.id}>`, "Red");
-      }
+      if (!role) return await safeReply("❌ Rol no existe.");
 
       try {
         if (interaction.member.roles.cache.has(role.id)) {

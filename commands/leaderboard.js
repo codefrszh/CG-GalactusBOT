@@ -1,24 +1,32 @@
-const { SlashCommandBuilder } = require("discord.js");
-const voiceStateEvent = require("../events/voiceStateUpdate");
+// commands/leaderboard.js
+const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
+const { getRanking } = require("../utils/leaderboardManager");
+const { sendLog } = require("../utils/logger");
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("leaderboard")
     .setDescription("Muestra el ranking semanal de voz"),
-  
   async execute(interaction) {
-    const voiceTimes = voiceStateEvent.voiceTimes || new Map();
-    if (!voiceTimes.size) return interaction.reply("No hay actividad registrada esta semana.");
+    try {
+      const ranking = getRanking();
+      if (ranking.length === 0) return interaction.reply("No hay actividad de voz aún esta semana.");
 
-    const topUsers = [...voiceTimes.entries()]
-      .sort((a,b) => (b[1].total || 0) - (a[1].total || 0))
-      .slice(0, 10);
+      const embed = new EmbedBuilder()
+        .setTitle("🏆 Leaderboard Semanal de Voz")
+        .setColor("Gold")
+        .setTimestamp()
+        .setDescription(ranking
+          .slice(0,10)
+          .map((entry,i)=>`**#${i+1}** - <@${entry.userId}>: ${Math.round(entry.total/60)} min`)
+          .join("\n")
+        );
 
-    let message = "**🏆 Top usuarios de voz (semanal):**\n";
-    topUsers.forEach(([id, data], i) => {
-      message += `**${i+1}.** <@${id}> - ${Math.round(data.total/60)} min\n`;
-    });
-
-    await interaction.reply(message);
+      await interaction.reply({ embeds: [embed] });
+      sendLog("Leaderboard Ejecutado", `Usuario <@${interaction.user.id}> consultó el leaderboard`, "Blue");
+    } catch (err) {
+      console.error("❌ Error leaderboard:", err);
+      sendLog("Error Leaderboard", `${err}`, "Red");
+    }
   }
 };
