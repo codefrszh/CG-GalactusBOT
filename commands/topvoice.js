@@ -1,9 +1,8 @@
 // commands/topvoice.js
-const { SlashCommandBuilder } = require("discord.js");
+const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 const voiceStateEvent = require("../events/voiceStateUpdate");
 
 // commands/topvoice.js
-const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 const { sendLog } = require("../utils/logger");
 
 // Simulación de top voice activity
