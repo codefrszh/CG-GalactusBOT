@@ -3,7 +3,7 @@ require("dotenv").config();
 const fs = require("fs");
 const path = require("path");
 const express = require("express");
-const { Client, Collection, GatewayIntentBits, Partials } = require("discord.js");
+const { Client, Collection, GatewayIntentBits, Partials, REST, Routes, SlashCommandBuilder } = require("discord.js");
 const { sendLog } = require("./utils/logger");
 const config = require("./config.json");
 
@@ -24,10 +24,12 @@ const client = new Client({
 // Colección de comandos
 // -----------------------------
 client.commands = new Collection();
-const commandFiles = fs.readdirSync(path.join(__dirname, "commands")).filter(f => f.endsWith(".js"));
+const commandsPath = path.join(__dirname, "commands");
+const commandFiles = fs.readdirSync(commandsPath).filter(f => f.endsWith(".js"));
 
+// Cargar comandos en memoria
 for (const file of commandFiles) {
-  const command = require(`./commands/${file}`);
+  const command = require(path.join(commandsPath, file));
   if (!command.data || !command.data.name) {
     console.warn(`⚠️ El archivo ${file} no exporta un comando válido.`);
     continue;
@@ -37,35 +39,51 @@ for (const file of commandFiles) {
 }
 
 // -----------------------------
-// Evento ready (corregido)
+// Registrar comandos slash en Discord
+// -----------------------------
+const rest = new REST({ version: "10" }).setToken(process.env.TOKEN);
+const clientId = process.env.CLIENT_ID;
+const guildId = process.env.GUILD_ID; // ID del servidor de prueba
+
+const slashCommands = commandFiles
+  .map(file => require(path.join(commandsPath, file)))
+  .filter(cmd => cmd.data instanceof SlashCommandBuilder)
+  .map(cmd => cmd.data.toJSON());
+
+(async () => {
+  try {
+    console.log("⏳ Registrando comandos slash...");
+    if (!guildId) {
+      await rest.put(
+        Routes.applicationCommands(clientId),
+        { body: slashCommands }
+      );
+      console.log("✅ Comandos registrados globalmente (puede tardar hasta 1h en aparecer).");
+    } else {
+      await rest.put(
+        Routes.applicationGuildCommands(clientId, guildId),
+        { body: slashCommands }
+      );
+      console.log("✅ Comandos registrados en el servidor de prueba.");
+    }
+  } catch (error) {
+    console.error("❌ Error registrando comandos slash:", error);
+    sendLog("Error Deploy Comandos", `${error}`, "Red");
+  }
+})();
+
+// -----------------------------
+// Evento ready
 // -----------------------------
 client.once("ready", () => {
   console.log(`✅ Bot iniciado como ${client.user.tag}`);
   sendLog("Bot Iniciado", `El bot se ha iniciado correctamente como **${client.user.tag}**`, "Green");
 
-  // =========================
   // Actividad del bot
-  // =========================
   client.user.setPresence({
-    activities: [{ name: "☄️ 3I|Atlas", type: 3 }], // type 3 = Viendo
-    status: "online" // online, idle, dnd, invisible
+    activities: [{ name: "☄️ 3I|Atlas", type: 3 }], // type 3 = "Viendo"
+    status: "online"
   });
-
-  // Si hay DEPLOY_TAG en .env, se envía log de deploy
-  if (process.env.DEPLOY_TAG) {
-    sendLog("Nuevo Deploy", `Se ha desplegado la versión **${process.env.DEPLOY_TAG}** del bot.`, "Blue");
-  }
-});
-
-// -----------------------------
-// Eventos extra para logger
-// -----------------------------
-client.on("reconnecting", () => {
-  sendLog("Reconexión", "El bot está intentando reconectarse…", "Yellow");
-});
-
-client.on("shardDisconnect", (event, shardId) => {
-  sendLog("Desconectado", `Shard ${shardId} desconectado: ${event.reason || "sin razón"}`, "Red");
 });
 
 // -----------------------------
@@ -129,9 +147,9 @@ const keepAliveUrl = process.env.URL; // URL pública de Render desde .env
 if (keepAliveUrl) {
   setInterval(async () => {
     try {
-      await fetch(keepAliveUrl, { method: "GET" }); // Node.js 18+ tiene fetch global
+      await fetch(keepAliveUrl, { method: "GET" });
       console.log("🔄 Auto-ping enviado a Render");
-      sendLog("KeepAlive", `🔄 Auto-ping enviado al servidor (${keepAliveUrl})`, "Blue");
+      sendLog("KeepAlive", `Auto-ping enviado al servidor (${keepAliveUrl})`, "Blue");
     } catch (err) {
       console.error("❌ Error en auto-ping:", err);
       sendLog("KeepAlive Error", `${err}`, "Red");
