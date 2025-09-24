@@ -17,7 +17,8 @@ if (process.env.WEBHOOK_URL) {
 }
 
 const sendLog = async (title, description, color = "Blue") => {
-  if (!webhook) return console.log("❌ Logger: Webhook no definido, mensaje:", title, description);
+  if (!webhook)
+    return console.log("❌ Logger: Webhook no definido, mensaje:", title, description);
 
   const embed = new EmbedBuilder()
     .setTitle(title)

@@ -37,9 +37,9 @@ for (const file of commandFiles) {
 }
 
 // -----------------------------
-// Evento ready
+// Evento ready (corregido)
 // -----------------------------
-client.once("clientReady", () => {
+client.once("ready", () => {
   console.log(`✅ Bot iniciado como ${client.user.tag}`);
   sendLog("Bot Iniciado", `El bot se ha iniciado correctamente como **${client.user.tag}**`, "Green");
 
@@ -47,12 +47,26 @@ client.once("clientReady", () => {
   // Actividad del bot
   // =========================
   client.user.setPresence({
-    activities: [{ name: "🌌 Una Galaxia", type: 2 }], // type 0 = "Playing"
+    activities: [{ name: "☄️ 3I|Atlas", type: 3 }], // type 3 = Viendo
     status: "online" // online, idle, dnd, invisible
   });
+
+  // Si hay DEPLOY_TAG en .env, se envía log de deploy
+  if (process.env.DEPLOY_TAG) {
+    sendLog("Nuevo Deploy", `Se ha desplegado la versión **${process.env.DEPLOY_TAG}** del bot.`, "Blue");
+  }
 });
 
+// -----------------------------
+// Eventos extra para logger
+// -----------------------------
+client.on("reconnecting", () => {
+  sendLog("Reconexión", "El bot está intentando reconectarse…", "Yellow");
+});
 
+client.on("shardDisconnect", (event, shardId) => {
+  sendLog("Desconectado", `Shard ${shardId} desconectado: ${event.reason || "sin razón"}`, "Red");
+});
 
 // -----------------------------
 // Evento interactionCreate
@@ -115,10 +129,9 @@ const keepAliveUrl = process.env.URL; // URL pública de Render desde .env
 if (keepAliveUrl) {
   setInterval(async () => {
     try {
-      // Node.js 18+ tiene fetch global; si no, instalar node-fetch
-      await fetch(keepAliveUrl, { method: "GET" });
+      await fetch(keepAliveUrl, { method: "GET" }); // Node.js 18+ tiene fetch global
       console.log("🔄 Auto-ping enviado a Render");
-      sendLog("KeepAlive", `Auto-ping enviado al servidor (${keepAliveUrl})`, "Blue");
+      sendLog("KeepAlive", `🔄 Auto-ping enviado al servidor (${keepAliveUrl})`, "Blue");
     } catch (err) {
       console.error("❌ Error en auto-ping:", err);
       sendLog("KeepAlive Error", `${err}`, "Red");
@@ -127,5 +140,3 @@ if (keepAliveUrl) {
 } else {
   console.warn("⚠️ process.env.URL no definido, auto-ping desactivado.");
 }
-
-
