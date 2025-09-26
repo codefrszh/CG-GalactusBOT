@@ -1,7 +1,7 @@
 // src/commands/cg-id.js
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 const voiceTimes = require("../utils/voiceTimes");
-const { sendLog, safeReply } = require("../utils/logger");
+const { sendLog } = require("../utils/logger");
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -26,18 +26,21 @@ module.exports = {
       const position = sorted.findIndex(e => e[0] === user.id) + 1 || "N/A";
 
       const embed = new EmbedBuilder()
-        .setTitle(`📊 Perfil de ${user.username}`)
+        .setTitle(`🌌 CG ID: ${user.username}`)
+        .setDescription("✨ Información estelar")
         .setThumbnail(user.displayAvatarURL({ dynamic: true }))
-        .setColor("Blue")
+        .setColor("#1E1B5F") // Azul profundo tipo universo
+        .setFooter({ text: "🌠 Comunidad Galactica" })
         .addFields(
-          { name: "👤 Usuario", value: `${user.tag}\nID: ${user.id}`, inline: true },
+          { name: "👤 Usuario", value: `${user.tag}\n🆔 ${user.id}`, inline: true },
           { name: "📅 Cuenta creada", value: `<t:${Math.floor(user.createdTimestamp / 1000)}:D>`, inline: true },
           { name: "📥 Se unió al server", value: `<t:${Math.floor(member.joinedTimestamp / 1000)}:D>`, inline: true },
           { name: "⏱️ Tiempo en voz", value: `${Math.round(data.total / 60)} min`, inline: true },
-          { name: "🏆 Posición en leaderboard", value: `${position}`, inline: true },
-          { name: "🏰 Servidor", value: `${interaction.guild.name}\nID: ${interaction.guild.id}`, inline: true }
+          { name: "🏆 Posición leaderboard", value: `${position}`, inline: true },
+          { name: "🏰 Servidor", value: `${interaction.guild.name}\n🆔 ${interaction.guild.id}`, inline: true }
         )
-        .setTimestamp();
+        .setTimestamp()
+        .setImage("https://i.imgur.com/8T9qF0C.png"); // Imagen de fondo espacial opcional
 
       await interaction.editReply({ embeds: [embed] });
 
