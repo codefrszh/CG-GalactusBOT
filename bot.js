@@ -3,7 +3,7 @@ require("dotenv").config();
 const fs = require("fs");
 const path = require("path");
 const express = require("express");
-const fetch = (...args) => import("node-fetch").then(({default: fetch}) => fetch(...args)); // para Render
+const fetch = (...args) => import("node-fetch").then(({ default: fetch }) => fetch(...args));
 const { 
   Client, 
   Collection, 
@@ -15,6 +15,21 @@ const {
 } = require("discord.js");
 const { sendLog } = require("./utils/logger");
 const config = require("./config.json");
+
+// -----------------------------
+// Función segura para responder a interacciones
+// -----------------------------
+async function safeReply(interaction, content, ephemeral = true) {
+  try {
+    if (interaction.replied || interaction.deferred) {
+      await interaction.followUp({ content, ephemeral });
+    } else {
+      await interaction.reply({ content, ephemeral });
+    }
+  } catch (err) {
+    console.error("❌ Error enviando respuesta:", err);
+  }
+}
 
 // -----------------------------
 // Crear cliente
@@ -103,7 +118,6 @@ client.once("ready", () => {
   console.log(`✅ Bot iniciado como ${client.user.tag}`);
   sendLog("Bot Iniciado", `El bot se ha iniciado correctamente como **${client.user.tag}**`, "Green");
 
-  // Actividad
   client.user.setPresence({
     activities: [{ name: "☄️ 3I|Atlas", type: 3 }],
     status: "online"
@@ -119,8 +133,8 @@ client.on("interactionCreate", async (interaction) => {
     const command = client.commands.get(interaction.commandName);
     if (!command) return;
 
-    // ⚠️ Defer se hace dentro del comando, no aquí
-    await command.execute(interaction);
+    // ⚠️ No defer aquí, cada comando maneja defer/reply
+    await command.execute(interaction, safeReply);
 
     sendLog(
       "Comando Ejecutado",
@@ -130,6 +144,8 @@ client.on("interactionCreate", async (interaction) => {
   } catch (err) {
     console.error("❌ Error en interactionCreate:", err);
     sendLog("Error interactionCreate", `${err}`, "Red");
+    // Intento de respuesta segura
+    if (interaction.isCommand()) safeReply(interaction, "❌ Ocurrió un error al ejecutar el comando.", true);
   }
 });
 
@@ -173,7 +189,7 @@ app.listen(PORT, () => {
 });
 
 // -----------------------------
-// Auto-ping para mantener vivo en Render
+// Auto-ping para Render
 // -----------------------------
 const KEEP_ALIVE_INTERVAL = 5 * 60 * 1000;
 const keepAliveUrl = process.env.URL;
@@ -192,3 +208,5 @@ if (keepAliveUrl) {
 } else {
   console.warn("⚠️ process.env.URL no definido, auto-ping desactivado.");
 }
+
+module.exports = { client, safeReply };
