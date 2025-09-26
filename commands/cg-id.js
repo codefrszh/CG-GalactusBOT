@@ -40,7 +40,7 @@ module.exports = {
           { name: "🏰 Servidor", value: `${interaction.guild.name}\n🆔 ${interaction.guild.id}`, inline: true }
         )
         .setTimestamp()
-        .setImage("https://i.imgur.com/8T9qF0C.png"); // Imagen de fondo espacial opcional
+        .setImage("https://i.imgur.com/ibCMHeO.mp4"); // Imagen de fondo espacial opcional
 
       await interaction.editReply({ embeds: [embed] });
 
