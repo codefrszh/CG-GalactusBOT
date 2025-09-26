@@ -1,38 +1,36 @@
-// commands/topvoice.js
+// src/commands/topvoice.js
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
-const voiceStateEvent = require("../events/voiceStateUpdate");
-
-// commands/topvoice.js
-const { sendLog } = require("../utils/logger");
-
-// Simulación de top voice activity
-const topVoiceData = [
-  { user: "Usuario1", hours: 12 },
-  { user: "Usuario2", hours: 9 },
-  { user: "Usuario3", hours: 7 },
-];
+const voiceTimes = require("../utils/voiceTimes");
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("topvoice")
-    .setDescription("Muestra los usuarios más activos en canales de voz."),
-  async execute(interaction) {
-    try {
-      const embed = new EmbedBuilder()
-        .setTitle("🎤 Top Voice Activity")
-        .setColor("Purple")
-        .setTimestamp()
-        .setDescription(
-          topVoiceData
-            .map((entry, i) => `**#${i + 1}** - ${entry.user}: ${entry.hours} horas`)
-            .join("\n")
-        );
+    .setDescription("Muestra el ranking de tiempo en voz"),
 
-      await interaction.reply({ embeds: [embed] });
-      sendLog("TopVoice Ejecutado", `Usuario <@${interaction.user.id}> consultó top voice`, "Blue");
-    } catch (err) {
-      console.error("❌ Error topvoice:", err);
-      sendLog("Error TopVoice", `${err}`, "Red");
+  async execute(interaction) {
+    await interaction.deferReply({ ephemeral: false }).catch(() => {});
+
+    const ranking = [];
+    for (const [userId, data] of voiceTimes.entries()) {
+      let total = data.total || 0;
+      if (data.joinedAt) {
+        total += Math.floor((Date.now() - data.joinedAt) / 1000);
+      }
+      ranking.push({ userId, total });
     }
+
+    ranking.sort((a, b) => b.total - a.total);
+
+    const top = ranking
+      .slice(0, 10)
+      .map((r, i) => `<@${r.userId}>: **${Math.floor(r.total / 60)} min**`)
+      .join("\n") || "No hay datos aún.";
+
+    const embed = new EmbedBuilder()
+      .setTitle("🏆 Ranking Tiempo en Voz")
+      .setDescription(top)
+      .setColor("Gold");
+
+    await interaction.editReply({ embeds: [embed] }).catch(() => {});
   },
 };

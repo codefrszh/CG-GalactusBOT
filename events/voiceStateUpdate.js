@@ -1,15 +1,28 @@
+// src/events/voiceStateUpdate.js
+const voiceTimes = require("../utils/voiceTimes");
+
 module.exports = {
   name: "voiceStateUpdate",
-  async execute(oldState, newState, client) {
-    const { sendLog } = require("../utils/logger");
+  async execute(oldState, newState) {
+    const userId = newState.id;
+    const now = Date.now();
 
-    // Detectar entrada o salida de canal de voz
-    if (!oldState.channelId && newState.channelId) {
-      sendLog("Voice Join", `<@${newState.id}> se unió a <#${newState.channelId}>`, "Green");
-    } else if (oldState.channelId && !newState.channelId) {
-      sendLog("Voice Leave", `<@${newState.id}> salió de <#${oldState.channelId}>`, "Yellow");
+    if (oldState.channelId && !newState.channelId) {
+      // salió de voz
+      const data = voiceTimes.get(userId);
+      if (data && data.joinedAt) {
+        const seconds = Math.floor((now - data.joinedAt) / 1000);
+        data.total = (data.total || 0) + seconds;
+        data.joinedAt = null;
+        voiceTimes.set(userId, data);
+      }
     }
 
-    // Aquí puedes agregar conteo de tiempo para leaderboard
-  }
+    if (!oldState.channelId && newState.channelId) {
+      // entró a voz
+      const data = voiceTimes.get(userId) || { total: 0 };
+      data.joinedAt = now;
+      voiceTimes.set(userId, data);
+    }
+  },
 };
