@@ -3,6 +3,7 @@ require("dotenv").config();
 const fs = require("fs");
 const path = require("path");
 const express = require("express");
+const fetch = (...args) => import("node-fetch").then(({default: fetch}) => fetch(...args)); // para Render
 const { 
   Client, 
   Collection, 
@@ -36,7 +37,6 @@ client.commands = new Collection();
 const commandsPath = path.join(__dirname, "commands");
 const commandFiles = fs.readdirSync(commandsPath).filter(f => f.endsWith(".js"));
 
-// Cargar comandos
 for (const file of commandFiles) {
   const command = require(path.join(commandsPath, file));
   if (!command.data || !command.data.name) {
@@ -72,7 +72,7 @@ for (const file of eventFiles) {
 // -----------------------------
 const rest = new REST({ version: "10" }).setToken(process.env.TOKEN);
 const clientId = process.env.CLIENT_ID;
-const guildId = process.env.GUILD_ID; // servidor de prueba
+const guildId = process.env.GUILD_ID;
 
 (async () => {
   try {
@@ -82,18 +82,13 @@ const guildId = process.env.GUILD_ID; // servidor de prueba
       .map(cmd => cmd.data.toJSON());
 
     if (!guildId) {
-      await rest.put(
-        Routes.applicationCommands(clientId),
-        { body: slashCommands }
-      );
+      await rest.put(Routes.applicationCommands(clientId), { body: slashCommands });
       console.log("✅ Comandos registrados globalmente (puede tardar hasta 1h).");
     } else {
-      await rest.put(
-        Routes.applicationGuildCommands(clientId, guildId),
-        { body: slashCommands }
-      );
+      await rest.put(Routes.applicationGuildCommands(clientId, guildId), { body: slashCommands });
       console.log("✅ Comandos registrados en el servidor de prueba.");
     }
+
     sendLog("Deploy Comandos", "✅ Comandos slash actualizados correctamente.", "Green");
   } catch (error) {
     console.error("❌ Error registrando comandos slash:", error);
@@ -102,15 +97,15 @@ const guildId = process.env.GUILD_ID; // servidor de prueba
 })();
 
 // -----------------------------
-// Evento clientReady
+// Evento ready
 // -----------------------------
-client.once("clientReady", () => {
+client.once("ready", () => {
   console.log(`✅ Bot iniciado como ${client.user.tag}`);
   sendLog("Bot Iniciado", `El bot se ha iniciado correctamente como **${client.user.tag}**`, "Green");
 
   // Actividad
   client.user.setPresence({
-    activities: [{ name: "☄️ 3I|Atlas", type: 3 }], // viendo
+    activities: [{ name: "☄️ 3I|Atlas", type: 3 }],
     status: "online"
   });
 });
@@ -124,8 +119,14 @@ client.on("interactionCreate", async (interaction) => {
     const command = client.commands.get(interaction.commandName);
     if (!command) return;
 
+    // ⚠️ Defer se hace dentro del comando, no aquí
     await command.execute(interaction);
-    sendLog("Comando Ejecutado", `Usuario <@${interaction.user.id}> ejecutó /${interaction.commandName}`, "Blue");
+
+    sendLog(
+      "Comando Ejecutado",
+      `Usuario <@${interaction.user.id}> ejecutó /${interaction.commandName}`,
+      "Blue"
+    );
   } catch (err) {
     console.error("❌ Error en interactionCreate:", err);
     sendLog("Error interactionCreate", `${err}`, "Red");
@@ -133,7 +134,7 @@ client.on("interactionCreate", async (interaction) => {
 });
 
 // -----------------------------
-// Comandos por prefix (ejemplo ping)
+// Comandos por prefix
 // -----------------------------
 client.on("messageCreate", async (message) => {
   if (!message.content.startsWith(config.prefix) || message.author.bot) return;
@@ -182,7 +183,7 @@ if (keepAliveUrl) {
     try {
       await fetch(keepAliveUrl, { method: "GET" });
       console.log("🔄 Auto-ping enviado a Render");
-      sendLog("KeepAlive", `🔄 Auto-ping enviado al servidor (${keepAliveUrl})`, "Blue");
+      sendLog("GALACTUS VE TODO!", `🔄 Auto-ping enviado al servidor (${keepAliveUrl})`, "Blue");
     } catch (err) {
       console.error("❌ Error en auto-ping:", err);
       sendLog("KeepAlive Error", `${err}`, "Red");
