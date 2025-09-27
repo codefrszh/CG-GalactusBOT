@@ -36,7 +36,7 @@ module.exports = {
       .setDescription(descripcion)
       .setThumbnail(interaction.client.user.displayAvatarURL())
       .setFooter({
-        text: `Anuncio enviado por ${interaction.user.tag}`,
+        text: `🌌Comunidad Galactica`,
         iconURL: interaction.user.displayAvatarURL(),
       })
       .setTimestamp();
