@@ -1,26 +1,59 @@
-// src/commands/botnews.js
-const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
+// /commands/botnews.js
+const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+
+const STAFF_ROLE_ID = '1413184321866436761'; // tu rol staff/admin
 
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName("botnews")
-    .setDescription("Muestra los últimos cambios y novedades del bot."),
+    .setName('botnews')
+    .setDescription('Envía un aviso/actualización del bot en formato embed')
+    .addStringOption(option =>
+      option.setName('titulo')
+        .setDescription('Título del anuncio')
+        .setRequired(true))
+    .addStringOption(option =>
+      option.setName('descripcion')
+        .setDescription('Mensaje/Descripción del anuncio')
+        .setRequired(true))
+    .addStringOption(option =>
+      option.setName('color')
+        .setDescription('Color del embed en formato HEX, ej. #3498db')
+        .setRequired(false))
+    .addStringOption(option =>
+      option.setName('imagen')
+        .setDescription('URL de una imagen opcional para el embed')
+        .setRequired(false)),
 
   async execute(interaction) {
-    const leaderboardInfoEmbed = new EmbedBuilder()
-      .setTitle("🎤 Nuevo Leaderboard de Voz")
-      .setDescription(
-        "¡Atención comunidad! Hemos actualizado nuestro sistema de ranking de usuarios activos en voz para reconocer a los más participativos."
-      )
-      .setColor("Purple")
-      .addFields(
-        { name: "💡 Qué hace", value: "• Registra automáticamente el tiempo que cada usuario pasa en canales de voz.\n• Destaca los 3 primeros lugares de la semana con `/topvoice`.\n• Muestra el ranking completo con `/leaderboard`." },
-        { name: "🎯 Beneficios", value: "• Reconocimiento a los miembros más activos.\n• Motivación para interactuar y participar en la comunidad.\n• Datos precisos y actualizados automáticamente." },
-        { name: "📌 Cómo usar", value: "• `/topvoice` → Ver los 3 usuarios más activos esta semana.\n• `/leaderboard` → Consultar el ranking completo de todos los usuarios activos en voz." }
-      )
-      .setFooter({ text: "Mantente activo y escala en el ranking semanal!" })
+    // ✅ Comprueba rol antes de continuar
+    if (!interaction.member.roles.cache.has(STAFF_ROLE_ID)) {
+      return interaction.reply({
+        content: '🚫 No tienes permisos para usar este comando.',
+        ephemeral: true,
+      });
+    }
+
+    const titulo = interaction.options.getString('titulo');
+    const descripcion = interaction.options.getString('descripcion');
+    const colorInput = interaction.options.getString('color') || '#2f3136';
+    const imagen = interaction.options.getString('imagen');
+
+    const color = /^#([0-9A-F]{3}){1,2}$/i.test(colorInput)
+      ? colorInput
+      : '#2f3136';
+
+    const embed = new EmbedBuilder()
+      .setTitle(titulo)
+      .setDescription(descripcion)
+      .setColor(color)
+      .setFooter({
+        text: `Anuncio enviado por ${interaction.user.tag}`,
+        iconURL: interaction.user.displayAvatarURL(),
+      })
       .setTimestamp();
 
-    await interaction.reply({ embeds: [leaderboardInfoEmbed], ephemeral: false });
+    if (imagen) embed.setImage(imagen);
+
+    await interaction.reply({ embeds: [embed] });
   },
 };
