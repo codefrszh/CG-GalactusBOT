@@ -29,7 +29,7 @@ module.exports = {
     const titulo = interaction.options.getString('titulo');
     const descripcion = interaction.options.getString('descripcion');
 
-    // ✅ Embed con estética “Galactus / Espacio”
+    // ✅ Embed con estética tipo “Espacio / Universo”
     const embed = new EmbedBuilder()
       .setColor('#6a00ff') // violeta espacial
       .setTitle(`🌌 ${titulo}`)
@@ -41,13 +41,20 @@ module.exports = {
       })
       .setTimestamp();
 
-    // ✅ Responder visiblemente en el canal
-    const message = await interaction.reply({ embeds: [embed], fetchReply: true });
+    try {
+      // ✅ Publicar el embed en el canal como mensaje del bot
+      await interaction.channel.send({ embeds: [embed] });
 
-    // ✅ Borrar la invocación del slash para que quede limpio el embed
-    // (la API borra el mensaje de interacción, no el embed)
-    setTimeout(() => {
-      interaction.deleteReply().catch(() => {});
-    }, 1000); // espera 1 segundo antes de borrar la invocación
+      // ✅ Responder a la interacción de forma invisible para evitar errores
+      if (!interaction.replied && !interaction.deferred) {
+        await interaction.reply({ content: '\u200B', ephemeral: true }); // mensaje invisible
+      }
+
+    } catch (err) {
+      console.error('❌ Error enviando botnews:', err);
+      if (!interaction.replied && !interaction.deferred) {
+        await interaction.reply({ content: '❌ Error enviando anuncio.', ephemeral: true });
+      }
+    }
   },
 };
