@@ -119,7 +119,7 @@ client.once("ready", () => {
   sendLog("Bot Iniciado", `El bot se ha iniciado correctamente como **${client.user.tag}**`, "Green");
 
   client.user.setPresence({
-    activities: [{ name: "☄️ 3I|Atlas", type: 3 }],
+    activities: [{ name: "☄️ El espacio", type: 3 }],
     status: "online"
   });
 });

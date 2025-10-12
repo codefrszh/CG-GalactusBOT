@@ -1,11 +1,20 @@
+// src/commands/ping.js
 const { SlashCommandBuilder } = require("discord.js");
-const { sendLog } = require("../utils/logger");
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("ping")
-    .setDescription("Responde con Pong!"),
+    .setDescription("Comprueba la latencia del bot."),
+  
+  defer: false, // rápido, no necesita defer
+
   async execute(interaction) {
-    await interaction.reply("🏓 Pong!");
-  }
+    try {
+      await interaction.reply(`🏓 Pong! Latencia: ${Date.now() - interaction.createdTimestamp}ms`);
+      return true;
+    } catch (err) {
+      console.error("❌ Error ping:", err);
+      return false;
+    }
+  },
 };

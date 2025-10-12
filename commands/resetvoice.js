@@ -6,18 +6,17 @@ const voiceTimes = require("../utils/voiceTimes");
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("resetvoice")
-    .setDescription("Resetea los tiempos de voz (admin)")
-    .setDefaultMemberPermissions(0), // sólo admin
+    .setDescription("Resetea los tiempos de voz (solo admin)")
+    .setDefaultMemberPermissions(0), // solo admin
 
-  async execute(interaction) {
+  async execute(interaction, safeReply) {
     try {
-      // defer para evitar InteractionAlreadyReplied
       await interaction.deferReply({ ephemeral: true });
 
-      // Limpia todos los registros
       voiceTimes.clear();
 
-      await interaction.editReply("✅ Todos los tiempos de voz han sido reseteados.");
+      await safeReply(interaction, "✅ Todos los tiempos de voz han sido reseteados.", true);
+
       sendLog(
         "Comando /resetvoice",
         `Usuario <@${interaction.user.id}> ejecutó /resetvoice`,
@@ -25,9 +24,7 @@ module.exports = {
       );
     } catch (err) {
       console.error("❌ Error resetvoice:", err);
-      try {
-        await interaction.editReply("❌ Ocurrió un error al resetear los tiempos.");
-      } catch (_) {}
+      await safeReply(interaction, "❌ Ocurrió un error al resetear los tiempos.", true);
     }
   },
 };

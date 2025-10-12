@@ -6,13 +6,18 @@ const { sendLog } = require("../utils/logger");
 module.exports = {
   name: "interactionCreate",
   async execute(interaction) {
-    // Función segura para responder a interacciones
+    // -----------------------------
+    // Función segura para responder
+    // -----------------------------
     const safeReply = async (content, ephemeral = true) => {
       try {
+        // ephemeral se reemplaza por flags para evitar warnings
+        const options = typeof content === "string" ? { content } : content;
+        options.flags = ephemeral ? 64 : 0; // 64 = EPHEMERAL
         if (interaction.replied || interaction.deferred) {
-          await interaction.followUp({ content, ephemeral }).catch(console.error);
+          await interaction.followUp(options).catch(console.error);
         } else {
-          await interaction.reply({ content, ephemeral }).catch(console.error);
+          await interaction.reply(options).catch(console.error);
         }
       } catch (err) {
         console.error("❌ Error enviando respuesta:", err);
@@ -20,33 +25,39 @@ module.exports = {
     };
 
     // -----------------------------
-    // Comandos Slash
+    // Slash Commands
     // -----------------------------
     if (interaction.isCommand()) {
       const command = interaction.client.commands.get(interaction.commandName);
       if (!command) return;
 
-      // Solo defer si el comando demora o lo define
+      // Rol permitido para /botnews
+      if (interaction.commandName === "botnews") {
+        const requiredRoleId = "1413184321866436761";
+        if (!interaction.member.roles.cache.has(requiredRoleId)) {
+          return safeReply("🚫 No tienes permisos para usar este comando.");
+        }
+      }
+
+      // Defer solo si el comando lo requiere
       if (command.defer) {
-        await interaction.deferReply({ ephemeral: true }).catch(() => {});
+        await interaction.deferReply({ flags: 64 }).catch(() => {});
       }
 
       try {
         // Ejecutar comando
         const replied = await command.execute(interaction);
 
-        // Log
+        // Log de ejecución
         await sendLog(
           "Comando ejecutado",
           `Usuario <@${interaction.user.id}> ejecutó /${interaction.commandName}`,
           "Blue"
         );
 
-        // Si el comando devuelve un mensaje de error interno
         if (replied === false) {
           await safeReply("❌ Error ejecutando comando.");
         }
-
       } catch (err) {
         console.error(err);
         await safeReply("❌ Error ejecutando comando.");
