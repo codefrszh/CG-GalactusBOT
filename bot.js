@@ -3,15 +3,16 @@ require("dotenv").config();
 const fs = require("fs");
 const path = require("path");
 const express = require("express");
+const cors = require("cors");
 const fetch = (...args) => import("node-fetch").then(({ default: fetch }) => fetch(...args));
-const { 
-  Client, 
-  Collection, 
-  GatewayIntentBits, 
-  Partials, 
-  REST, 
-  Routes, 
-  SlashCommandBuilder 
+const {
+  Client,
+  Collection,
+  GatewayIntentBits,
+  Partials,
+  REST,
+  Routes,
+  SlashCommandBuilder,
 } = require("discord.js");
 const { sendLog } = require("./utils/logger");
 const config = require("./config.json");
@@ -50,7 +51,7 @@ const client = new Client({
 // -----------------------------
 client.commands = new Collection();
 const commandsPath = path.join(__dirname, "commands");
-const commandFiles = fs.readdirSync(commandsPath).filter(f => f.endsWith(".js"));
+const commandFiles = fs.readdirSync(commandsPath).filter((f) => f.endsWith(".js"));
 
 for (const file of commandFiles) {
   const command = require(path.join(commandsPath, file));
@@ -63,10 +64,10 @@ for (const file of commandFiles) {
 }
 
 // -----------------------------
-// Colección de eventos
+// Cargar eventos
 // -----------------------------
 const eventsPath = path.join(__dirname, "events");
-const eventFiles = fs.readdirSync(eventsPath).filter(f => f.endsWith(".js"));
+const eventFiles = fs.readdirSync(eventsPath).filter((f) => f.endsWith(".js"));
 
 for (const file of eventFiles) {
   const event = require(path.join(eventsPath, file));
@@ -83,7 +84,7 @@ for (const file of eventFiles) {
 }
 
 // -----------------------------
-// Registrar comandos slash
+// Registrar slash commands
 // -----------------------------
 const rest = new REST({ version: "10" }).setToken(process.env.TOKEN);
 const clientId = process.env.CLIENT_ID;
@@ -93,20 +94,20 @@ const guildId = process.env.GUILD_ID;
   try {
     console.log("⏳ Registrando comandos slash...");
     const slashCommands = [...client.commands.values()]
-      .filter(cmd => cmd.data instanceof SlashCommandBuilder)
-      .map(cmd => cmd.data.toJSON());
+      .filter((cmd) => cmd.data instanceof SlashCommandBuilder)
+      .map((cmd) => cmd.data.toJSON());
 
     if (!guildId) {
       await rest.put(Routes.applicationCommands(clientId), { body: slashCommands });
-      console.log("✅ Comandos registrados globalmente (puede tardar hasta 1h).");
+      console.log("✅ Comandos registrados globalmente.");
     } else {
       await rest.put(Routes.applicationGuildCommands(clientId, guildId), { body: slashCommands });
-      console.log("✅ Comandos registrados en el servidor de prueba.");
+      console.log("✅ Comandos registrados en el servidor de pruebas.");
     }
 
-    sendLog("Deploy Comandos", "✅ Comandos slash actualizados correctamente.", "Green");
+    sendLog("Deploy Comandos", "✅ Comandos actualizados.", "Green");
   } catch (error) {
-    console.error("❌ Error registrando comandos slash:", error);
+    console.error("❌ Error registrando comandos:", error);
     sendLog("Error Deploy Comandos", `${error}`, "Red");
   }
 })();
@@ -116,11 +117,11 @@ const guildId = process.env.GUILD_ID;
 // -----------------------------
 client.once("ready", () => {
   console.log(`✅ Bot iniciado como ${client.user.tag}`);
-  sendLog("Bot Iniciado", `El bot se ha iniciado correctamente como **${client.user.tag}**`, "Green");
+  sendLog("Bot Iniciado", `✅ ${client.user.tag} está online`, "Green");
 
   client.user.setPresence({
-    activities: [{ name: "☄️ El espacio", type: 3 }],
-    status: "online"
+    activities: [{ name: "☄️ Galacti@s", type: 3 }],
+    status: "online",
   });
 });
 
@@ -130,10 +131,10 @@ client.once("ready", () => {
 client.on("interactionCreate", async (interaction) => {
   try {
     if (!interaction.isCommand()) return;
+
     const command = client.commands.get(interaction.commandName);
     if (!command) return;
 
-    // ⚠️ No defer aquí, cada comando maneja defer/reply
     await command.execute(interaction, safeReply);
 
     sendLog(
@@ -144,13 +145,13 @@ client.on("interactionCreate", async (interaction) => {
   } catch (err) {
     console.error("❌ Error en interactionCreate:", err);
     sendLog("Error interactionCreate", `${err}`, "Red");
-    // Intento de respuesta segura
-    if (interaction.isCommand()) safeReply(interaction, "❌ Ocurrió un error al ejecutar el comando.", true);
+
+    if (interaction.isCommand()) safeReply(interaction, "❌ Error interno.", true);
   }
 });
 
 // -----------------------------
-// Comandos por prefix
+// Mensajes con prefijo (!)
 // -----------------------------
 client.on("messageCreate", async (message) => {
   if (!message.content.startsWith(config.prefix) || message.author.bot) return;
@@ -165,27 +166,76 @@ client.on("messageCreate", async (message) => {
 });
 
 // -----------------------------
-// Login del bot
+// Login bot
 // -----------------------------
-client.login(process.env.TOKEN)
+client
+  .login(process.env.TOKEN)
   .then(() => console.log("🔑 Token válido, bot conectado."))
   .catch((err) => {
-    console.error("❌ Error al iniciar sesión, revisa tu TOKEN en .env");
-    console.error(err);
+    console.error("❌ Error al iniciar sesión:", err);
   });
 
-// -----------------------------
-// Servidor web Render
-// -----------------------------
+// ======================================================
+// ✅ SERVIDOR WEB (RENDER) + API /stats + API /health
+// ======================================================
 const app = express();
+app.use(cors());
+app.use(express.json());
+
 const PORT = process.env.PORT || 10000;
 
+// ✅ Página principal
 app.get("/", (req, res) => {
-  res.send("Servidor web activo ✅");
+  res.send("✅ Galactus API Online");
 });
 
+// ✅ STATS DEL SERVIDOR
+app.get("/api/stats", async (req, res) => {
+  try {
+    const guildId = "1032134781284126791"; // tu servidor
+    const guild = client.guilds.cache.get(guildId);
+
+    if (!guild) return res.status(404).json({ error: "Guild not found" });
+
+    await guild.members.fetch();
+
+    const onlineMembers = guild.members.cache.filter(
+      (m) =>
+        m.presence?.status === "online" ||
+        m.presence?.status === "idle" ||
+        m.presence?.status === "dnd"
+    ).size;
+
+    const totalMembers = guild.members.cache.filter((m) => !m.user.bot).size;
+
+    const botCount = guild.members.cache.filter((m) => m.user.bot).size;
+
+    return res.json({
+      guildName: guild.name,
+      onlineMembers,
+      totalMembers,
+      botCount,
+      timestamp: Date.now(),
+    });
+  } catch (err) {
+    console.error("❌ /api/stats error:", err);
+    res.status(500).json({ error: "Failed to fetch stats" });
+  }
+});
+
+// ✅ HEALTH CHECK
+app.get("/api/health", (req, res) => {
+  res.json({
+    status: "ok",
+    botOnline: client.ws.ping > 0,
+    latency: client.ws.ping,
+    timestamp: Date.now(),
+  });
+});
+
+// ✅ Iniciar servidor
 app.listen(PORT, () => {
-  console.log(`Servidor web escuchando en el puerto ${PORT}`);
+  console.log(`🌐 API escuchando en puerto ${PORT}`);
 });
 
 // -----------------------------
@@ -199,14 +249,11 @@ if (keepAliveUrl) {
     try {
       await fetch(keepAliveUrl, { method: "GET" });
       console.log("🔄 Auto-ping enviado a Render");
-      sendLog("GALACTUS VE TODO!", `🔄 Auto-ping enviado al servidor (${keepAliveUrl})`, "Blue");
+      sendLog("KEEPALIVE", `Ping enviado a ${keepAliveUrl}`, "Blue");
     } catch (err) {
       console.error("❌ Error en auto-ping:", err);
-      sendLog("KeepAlive Error", `${err}`, "Red");
     }
   }, KEEP_ALIVE_INTERVAL);
-} else {
-  console.warn("⚠️ process.env.URL no definido, auto-ping desactivado.");
 }
 
 module.exports = { client, safeReply };
