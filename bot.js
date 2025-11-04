@@ -190,7 +190,9 @@ app.get("/", (req, res) => {
   res.send("✅ Galactus API Online");
 });
 
+// ==============================
 // ✅ STATS DEL SERVIDOR
+// ==============================
 app.get("/api/stats", async (req, res) => {
   try {
     const guildId = "1032134781284126791"; // tu servidor
@@ -198,24 +200,36 @@ app.get("/api/stats", async (req, res) => {
 
     if (!guild) return res.status(404).json({ error: "Guild not found" });
 
+    // Traer todos los miembros para que la caché esté completa
     await guild.members.fetch();
 
+    // Miembros humanos online
     const onlineMembers = guild.members.cache.filter(
       (m) =>
-        m.presence?.status === "online" ||
-        m.presence?.status === "idle" ||
-        m.presence?.status === "dnd"
+        !m.user.bot &&
+        (m.presence?.status === "online" ||
+          m.presence?.status === "idle" ||
+          m.presence?.status === "dnd")
     ).size;
 
+    // Total miembros humanos
     const totalMembers = guild.members.cache.filter((m) => !m.user.bot).size;
 
-    const botCount = guild.members.cache.filter((m) => m.user.bot).size;
+    // Bots activos (online, idle, dnd)
+    const activeBots = guild.members.cache.filter(
+      (m) =>
+        m.user.bot &&
+        (m.presence?.status === "online" ||
+          m.presence?.status === "idle" ||
+          m.presence?.status === "dnd")
+    ).size;
 
+    // Responder JSON
     return res.json({
       guildName: guild.name,
       onlineMembers,
       totalMembers,
-      botCount,
+      botCount: activeBots,
       timestamp: Date.now(),
     });
   } catch (err) {
@@ -223,6 +237,7 @@ app.get("/api/stats", async (req, res) => {
     res.status(500).json({ error: "Failed to fetch stats" });
   }
 });
+
 
 // ✅ HEALTH CHECK
 app.get("/api/health", (req, res) => {
