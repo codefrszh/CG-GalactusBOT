@@ -122,7 +122,7 @@ client.once("ready", () => {
 
   client.user.setPresence({
     activities: [{ name: "☄️ Galacti@s", type: 3 }],
-    status: "online",
+    status: "dnd",
   });
 });
 
