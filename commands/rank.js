@@ -1,8 +1,7 @@
-// src/commands/rank.js
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 const db = require("../database/initLevels");
+const safeReply = require("../utils/safeReply");
 
-// Función para obtener rol por nivel
 function getLevelRole(level, guild) {
     const roles = {
         5: "1436449769286402191",
@@ -22,23 +21,29 @@ module.exports = {
     async execute(interaction) {
         const userId = interaction.user.id;
 
-        db.get("SELECT * FROM users WHERE user_id = ?", [userId], (err, row) => {
-            if (err || !row) {
-                return interaction.reply("Aún no tienes XP, ¡sé activo para ganar niveles!");
-            }
+        db.get("SELECT * FROM users WHERE user_id = ?", [userId], async (err, row) => {
+            if (err || !row) return safeReply(interaction, "Aún no tienes XP, ¡sé activo para ganar niveles!");
 
-            const nextLevelXP = row.level * 100;
-            const progress = Math.min(100, Math.floor((row.xp / nextLevelXP) * 100));
-            const levelRole = getLevelRole(row.level, interaction.guild);
+            const voiceXP = Math.floor((row.voice_time || 0) / 30);
+            const totalXP = row.xp + voiceXP;
+            const level = row.level;
+            const nextLevelXP = level * 100;
+            const progress = Math.min(100, Math.floor((totalXP / nextLevelXP) * 100));
+            const levelRole = getLevelRole(level, interaction.guild);
             const roleText = levelRole ? `<@&${levelRole.id}>` : "Ninguno";
 
             const embed = new EmbedBuilder()
                 .setColor("#8b45ff")
                 .setTitle(`Nivel de ${interaction.user.username}`)
-                .setDescription(`📊 XP Total: **${row.xp}**\n⭐ Nivel: **${row.level}**\n🎯 Progreso: ${progress}% hacia el nivel ${row.level + 1}\n🏷️ Rol actual: ${roleText}`)
+                .setDescription(
+                    `📊 XP Total: **${totalXP}**\n` +
+                    `⭐ Nivel: **${level}**\n` +
+                    `🎯 Progreso: ${progress}% hacia el nivel ${level + 1}\n` +
+                    `🏷️ Rol actual: ${roleText}`
+                )
                 .setTimestamp();
 
-            interaction.reply({ embeds: [embed] });
+            await safeReply(interaction, { embeds: [embed] });
         });
     },
 };

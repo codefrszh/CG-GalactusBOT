@@ -1,14 +1,16 @@
 // utils/safeReply.js
-async function safeReply(interaction, content, ephemeral = true) {
-  try {
-    if (interaction.replied || interaction.deferred) {
-      await interaction.followUp({ content, ephemeral });
-    } else {
-      await interaction.reply({ content, ephemeral });
-    }
-  } catch (err) {
-    console.error("❌ Error enviando respuesta:", err);
-  }
-}
+module.exports = async function safeReply(interaction, content, ephemeral = false) {
+    try {
+        // Si ya se deferió, usamos editReply
+        if (interaction.deferred) {
+            return await interaction.editReply(typeof content === "string" ? { content } : content);
+        }
+        // Si ya se respondió, ignoramos
+        if (interaction.replied) return;
 
-module.exports = { safeReply };
+        // Respuesta inicial
+        return await interaction.reply(typeof content === "string" ? { content, flags: ephemeral ? 64 : undefined } : content);
+    } catch (err) {
+        console.error("❌ safeReply error:", err);
+    }
+};

@@ -9,7 +9,8 @@ db.serialize(() => {
             level INTEGER DEFAULT 1,
             last_message INTEGER,
             voice_time INTEGER DEFAULT 0,
-            last_join_voice INTEGER
+            last_join_voice INTEGER,
+            total_score INTEGER DEFAULT 0
         )
     `);
 });

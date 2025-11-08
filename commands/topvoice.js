@@ -2,6 +2,7 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 const db = require("../database/initLevels");
 const { sendLog } = require("../utils/logger");
+const safeReply = require("../utils/safeReply");
 
 // Función para obtener rol por nivel
 function getLevelRole(level, guild) {
@@ -16,48 +17,38 @@ function getLevelRole(level, guild) {
 }
 
 module.exports = {
-  data: new SlashCommandBuilder()
-    .setName("topvoice")
-    .setDescription("Muestra los top 3 usuarios con más actividad (mensajes + voz)"),
+    data: new SlashCommandBuilder()
+        .setName("topvoice")
+        .setDescription("Muestra los top 3 usuarios más activos (mensajes + voz)"),
 
-  async execute(interaction, safeReply) {
-    try {
-      await interaction.deferReply({ ephemeral: false });
+    async execute(interaction) {
+        try {
+            await interaction.deferReply({ ephemeral: false });
 
-      db.all("SELECT * FROM users ORDER BY (xp + voice_time/30) DESC LIMIT 3", async (err, rows) => {
-        if (err) {
-          console.error("DB error /topvoice:", err);
-          return await safeReply(interaction, "❌ Error al obtener el top de usuarios.", true);
+            db.all("SELECT * FROM users ORDER BY (xp + voice_time/30) DESC LIMIT 3", async (err, rows) => {
+                if (err) return safeReply(interaction, "❌ Error al obtener el top de usuarios.", true);
+
+                const desc = rows.length > 0
+                    ? rows.map((user, i) => {
+                        const xpVoice = Math.floor((user.voice_time || 0)/30);
+                        const totalXP = user.xp + xpVoice;
+                        const levelRole = getLevelRole(user.level, interaction.guild);
+                        const roleText = levelRole ? `<@&${levelRole.id}>` : "Ninguno";
+                        return `**#${i+1}** - <@${user.user_id}>: XP Mensajes ${user.xp} + XP Voz ${xpVoice} = **${totalXP}** | Nivel: ${user.level} | Rol: ${roleText}`;
+                    }).join("\n")
+                    : "No hay datos aún.";
+
+                const embed = new EmbedBuilder()
+                    .setTitle("🎤 Top Usuarios Activos")
+                    .setColor("Purple")
+                    .setDescription(desc)
+                    .setTimestamp();
+
+                await safeReply(interaction, { embeds: [embed] });
+            });
+        } catch (err) {
+            console.error("❌ Error topvoice:", err);
+            await safeReply(interaction, "❌ Ocurrió un error al mostrar el top voice.", true);
         }
-
-        const desc = rows.length > 0
-          ? rows.map((user, i) => {
-              const xpVoice = Math.floor((user.voice_time||0)/30);
-              const totalXP = user.xp + xpVoice;
-              const levelRole = getLevelRole(user.level, interaction.guild);
-              const roleText = levelRole ? `<@&${levelRole.id}>` : "Ninguno";
-              return `**#${i + 1}** - <@${user.user_id}>: XP Mensajes ${user.xp} + XP Voz ${xpVoice} = **${totalXP}** | Nivel: ${user.level} | Rol: ${roleText}`;
-            }).join("\n")
-          : "No hay datos aún.";
-
-        const embed = new EmbedBuilder()
-          .setTitle("🎤 Top Usuarios Activos")
-          .setColor("Purple")
-          .setTimestamp()
-          .setDescription(desc);
-
-        await safeReply(interaction, { embeds: [embed] });
-
-        sendLog(
-          "Comando /topvoice",
-          `Usuario <@${interaction.user.id}> ejecutó /topvoice`,
-          "Blue"
-        );
-      });
-
-    } catch (err) {
-      console.error("❌ Error topvoice:", err);
-      await safeReply(interaction, "❌ Ocurrió un error al mostrar el top voice.", true);
-    }
-  },
+    },
 };
