@@ -42,7 +42,10 @@ const client = new Client({
     GatewayIntentBits.MessageContent,
     GatewayIntentBits.GuildMembers,
     GatewayIntentBits.GuildVoiceStates,
+<<<<<<< HEAD
      GatewayIntentBits.GuildPresences,
+=======
+>>>>>>> e6c235f (update y integracion de cors para api)
   ],
   partials: [Partials.Message, Partials.Channel, Partials.Reaction],
 });
@@ -122,7 +125,11 @@ client.once("ready", () => {
 
   client.user.setPresence({
     activities: [{ name: "☄️ Galacti@s", type: 3 }],
+<<<<<<< HEAD
     status: "dnd",
+=======
+    status: "online",
+>>>>>>> e6c235f (update y integracion de cors para api)
   });
 });
 
@@ -190,9 +197,13 @@ app.get("/", (req, res) => {
   res.send("✅ Galactus API Online");
 });
 
+<<<<<<< HEAD
 // ==============================
 // ✅ STATS DEL SERVIDOR
 // ==============================
+=======
+// ✅ STATS DEL SERVIDOR
+>>>>>>> e6c235f (update y integracion de cors para api)
 app.get("/api/stats", async (req, res) => {
   try {
     const guildId = "1032134781284126791"; // tu servidor
@@ -200,6 +211,7 @@ app.get("/api/stats", async (req, res) => {
 
     if (!guild) return res.status(404).json({ error: "Guild not found" });
 
+<<<<<<< HEAD
     // Traer todos los miembros para que la caché esté completa
     await guild.members.fetch();
 
@@ -225,11 +237,30 @@ app.get("/api/stats", async (req, res) => {
     ).size;
 
     // Responder JSON
+=======
+    await guild.members.fetch();
+
+    const onlineMembers = guild.members.cache.filter(
+      (m) =>
+        m.presence?.status === "online" ||
+        m.presence?.status === "idle" ||
+        m.presence?.status === "dnd"
+    ).size;
+
+    const totalMembers = guild.members.cache.filter((m) => !m.user.bot).size;
+
+    const botCount = guild.members.cache.filter((m) => m.user.bot).size;
+
+>>>>>>> e6c235f (update y integracion de cors para api)
     return res.json({
       guildName: guild.name,
       onlineMembers,
       totalMembers,
+<<<<<<< HEAD
       botCount: activeBots,
+=======
+      botCount,
+>>>>>>> e6c235f (update y integracion de cors para api)
       timestamp: Date.now(),
     });
   } catch (err) {
@@ -238,7 +269,10 @@ app.get("/api/stats", async (req, res) => {
   }
 });
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> e6c235f (update y integracion de cors para api)
 // ✅ HEALTH CHECK
 app.get("/api/health", (req, res) => {
   res.json({
