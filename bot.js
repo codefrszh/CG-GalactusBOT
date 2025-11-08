@@ -64,15 +64,24 @@ function addXpToUser(userId, xpToAdd, guild) {
         );
         return;
       }
-      const newXP = (row.xp || 0) + xpToAdd;
-      let newLevel = row.level || 1;
+      const newXP = row.xp + xpEarned;
+      let newLevel = row.level;
       let leveledUp = false;
+      if (newXP >= nextLevelXP) {
+    newLevel++;
+    leveledUp = true;
+}
+    // Actualizar total_score
+    const newTotal = newXP + (row.voice_time || 0);
+
 
       // Fórmula simple: nextLevelXP = level * 100
       while (newXP >= newLevel * 100) {
         newLevel++;
         leveledUp = true;
       }
+      
+      
 
       db.run(
         "UPDATE users SET xp = ?, level = ?, last_message = ? WHERE user_id = ?",
@@ -335,8 +344,8 @@ client.on("voiceStateUpdate", async (oldState, newState) => {
       db.run("UPDATE users SET last_join_voice = ? WHERE user_id = ?", [now, userId], (err) => {
         if (err) {
           // si no existe fila, crearla
-          db.run("INSERT OR IGNORE INTO users (user_id, xp, level, last_message, voice_time, last_join_voice) VALUES (?, ?, ?, ?, ?, ?)",
-            [userId, 0, 1, 0, 0, now], (e) => { if (e) console.error(e); }
+          db.run("INSERT OR IGNORE INTO users (user_id, xp, level, last_message, voice_time, last_join_voice, total_score) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            [userId, 0, 1, 0, 0, now, 0], (e) => { if (e) console.error(e); }
           );
         }
       });
@@ -356,9 +365,15 @@ client.on("voiceStateUpdate", async (oldState, newState) => {
 
         // actualizar voice_time y limpiar last_join_voice
         const newVoiceTotal = (row.voice_time || 0) + seconds;
-        db.run("UPDATE users SET voice_time = ?, last_join_voice = NULL WHERE user_id = ?", [newVoiceTotal, userId], (e) => {
-          if (e) console.error("DB update voice_time error:", e);
-        });
+
+        // 🔹 Actualizar total_score combinando XP y voice_time
+        const newTotalScore = (row.xp || 0) + newVoiceTotal;
+
+        db.run(
+          "UPDATE users SET voice_time = ?, last_join_voice = NULL, total_score = ? WHERE user_id = ?",
+          [newVoiceTotal, newTotalScore, userId],
+          (e) => { if (e) console.error("DB update voice_time error:", e); }
+        );
 
         // Dar XP por tiempo de voz: 1 XP por 30 segundos
         const xpFromVoice = Math.floor(seconds / 30);
@@ -380,6 +395,7 @@ client.on("voiceStateUpdate", async (oldState, newState) => {
     console.error("Voice handler error:", err);
   }
 });
+
 
 // -----------------------------
 // Login bot
