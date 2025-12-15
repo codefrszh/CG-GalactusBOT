@@ -4,6 +4,6 @@ Bot creado por/para Comunidad Galactica en discord.
 
 ## Colaboradores
 Codefrszh
-<br>Cheryzada
+Cheryzada
 
-Visitanos en Discord: [Comunida Galactica en Discord](https://discord.gg/)
+Visitanos en Discord: [text](https://discord.gg/)
