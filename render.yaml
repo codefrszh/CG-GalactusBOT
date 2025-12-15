@@ -1,0 +1,35 @@
+services:
+  - type: web
+    name: galactus-backend
+    runtime: node
+    repo: https://github.com/TU_REPO
+    plan: pro
+    buildCommand: "npm install"
+    startCommand: "bash start.sh"
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DISCORD_TOKEN
+        sync: false
+      - key: DISCORD_CLIENT_ID
+        sync: false
+      - key: DB_URL
+        sync: false
+    healthCheckPath: /health
+    autoDeploy: true
+    region: oregon
+
+  - type: worker
+    name: galactus-bot
+    runtime: node
+    plan: pro
+    repo: https://github.com/TU_REPO
+    buildCommand: "npm install"
+    startCommand: "node src/bot.js"
+    envVars:
+      - key: DISCORD_TOKEN
+        sync: false
+      - key: DISCORD_CLIENT_ID
+        sync: false
+      - key: DB_URL
+        sync: false
