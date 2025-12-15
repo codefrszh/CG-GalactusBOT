@@ -4,7 +4,7 @@
   "description": "Bot Discord 24/7 listo para Render",
   "main": "bot.js",
   "scripts": {
-    "start": "node bot.js"
+    "start": "node src/bot.js"
   },
   "author": "Victor Perez",
   "license": "MIT",
